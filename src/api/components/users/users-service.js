@@ -54,11 +54,10 @@ async function createUser(name, email, password) {
 
   try {
     await usersRepository.createUser(name, email, hashedPassword);
+    return true;
   } catch (err) {
     return null;
   }
-
-  return true;
 }
 
 /**
@@ -78,11 +77,10 @@ async function updateUser(id, name, email) {
 
   try {
     await usersRepository.updateUser(id, name, email);
+    return true;
   } catch (err) {
     return null;
   }
-
-  return true;
 }
 
 /**
@@ -100,11 +98,14 @@ async function deleteUser(id) {
 
   try {
     await usersRepository.deleteUser(id);
+    return true;
   } catch (err) {
     return null;
   }
+}
 
-  return true;
+async function isEmailExists(email) {
+  return usersRepository.isEmailExists(email);
 }
 
 module.exports = {
@@ -113,4 +114,5 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  isEmailExists,
 };

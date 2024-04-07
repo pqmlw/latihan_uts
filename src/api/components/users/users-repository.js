@@ -62,10 +62,14 @@ async function deleteUser(id) {
   return User.deleteOne({ _id: id });
 }
 
+async function isEmailExists(email) {
+  return User.exists({ email });
+}
 module.exports = {
   getUsers,
   getUser,
   createUser,
   updateUser,
   deleteUser,
+  isEmailExists,
 };

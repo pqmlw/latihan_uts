@@ -1,4 +1,5 @@
 const usersService = require('./users-service');
+const { hashPassword } = require('../../../utils/password');
 const { errorResponder, errorTypes } = require('../../../core/errors');
 
 /**
@@ -45,13 +46,23 @@ async function getUser(request, response, next) {
  * @param {object} next - Express route middlewares
  * @returns {object} Response object or pass an error to the next route
  */
+
 async function createUser(request, response, next) {
   try {
     const name = request.body.name;
     const email = request.body.email;
     const password = request.body.password;
 
-    const success = await usersService.createUser(name, email, password);
+    // Check if email exists
+    const emailExists = await usersService.isEmailExists(email);
+    if (emailExists) {
+      throw errorResponder(errorTypes.EMAIL_ALREADY_TAKEN, 'Email already taken');
+    }
+
+    // Hash password
+    const hashedPassword = await hashPassword(password);
+
+    const success = await usersService.createUser(name, email, hashedPassword);
     if (!success) {
       throw errorResponder(
         errorTypes.UNPROCESSABLE_ENTITY,
