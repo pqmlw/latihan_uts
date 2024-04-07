@@ -52,6 +52,7 @@ async function createUser(request, response, next) {
     const name = request.body.name;
     const email = request.body.email;
     const password = request.body.password;
+    const confirm_password = request.body.confirm_password;
 
     // Check if email exists
     const emailExists = await usersService.isEmailExists(email);
@@ -59,6 +60,10 @@ async function createUser(request, response, next) {
       throw errorResponder(errorTypes.EMAIL_ALREADY_TAKEN, 'Email already taken');
     }
 
+    // Check if password and confirm_password match
+    if (password != confirm_password) {
+      throw errorResponder(errorTypes.INVALID_PASSWORD, 'Passwords do not match');
+    }
     // Hash password
     const hashedPassword = await hashPassword(password);
 
