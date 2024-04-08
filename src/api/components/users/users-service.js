@@ -1,63 +1,40 @@
-const usersRepository = require('./users-repository');
+const { User } = require('../../../models');
 const { hashPassword } = require('../../../utils/password');
+const { errorResponder, errorTypes } = require('../../../core/errors');
+const bcrypt = require('bcrypt'); // Import bcrypt
 
 /**
- * Get list of users
- * @returns {Array}
+ * Get a list of users
+ * @returns {Promise}
  */
 async function getUsers() {
-  const users = await usersRepository.getUsers();
-
-  const results = [];
-  for (let i = 0; i < users.length; i += 1) {
-    const user = users[i];
-    results.push({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    });
-  }
-
-  return results;
+  return User.find({});
 }
 
 /**
  * Get user detail
  * @param {string} id - User ID
- * @returns {Object}
+ * @returns {Promise}
  */
 async function getUser(id) {
-  const user = await usersRepository.getUser(id);
-
-  // User not found
-  if (!user) {
-    return null;
-  }
-
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-  };
+  return User.findById(id);
 }
 
 /**
  * Create new user
  * @param {string} name - Name
  * @param {string} email - Email
- * @param {string} password - Password
- * @returns {boolean}
+ * @param {string} password - Plain password
+ * @returns {Promise}
  */
 async function createUser(name, email, password) {
-  // Hash password
+  // Hash password before saving
   const hashedPassword = await hashPassword(password);
-
-  try {
-    await usersRepository.createUser(name, email, hashedPassword);
-    return true;
-  } catch (err) {
-    return null;
-  }
+  return User.create({
+    name,
+    email,
+    password: hashedPassword,
+  });
 }
 
 /**
@@ -65,47 +42,82 @@ async function createUser(name, email, password) {
  * @param {string} id - User ID
  * @param {string} name - Name
  * @param {string} email - Email
- * @returns {boolean}
+ * @returns {Promise}
  */
 async function updateUser(id, name, email) {
-  const user = await usersRepository.getUser(id);
-
-  // User not found
-  if (!user) {
-    return null;
-  }
-
-  try {
-    await usersRepository.updateUser(id, name, email);
-    return true;
-  } catch (err) {
-    return null;
-  }
+  return User.updateOne(
+    {
+      _id: id,
+    },
+    {
+      $set: {
+        name,
+        email,
+      },
+    }
+  );
 }
 
 /**
- * Delete user
+ * Delete a user
  * @param {string} id - User ID
- * @returns {boolean}
+ * @returns {Promise}
  */
 async function deleteUser(id) {
-  const user = await usersRepository.getUser(id);
-
-  // User not found
-  if (!user) {
-    return null;
-  }
-
-  try {
-    await usersRepository.deleteUser(id);
-    return true;
-  } catch (err) {
-    return null;
-  }
+  return User.deleteOne({ _id: id });
 }
 
+/**
+ * Check if an email already exists in the database
+ * @param {string} email - Email
+ * @returns {Promise<boolean>}
+ */
 async function isEmailExists(email) {
-  return usersRepository.isEmailExists(email);
+  return User.exists({ email });
+}
+
+/**
+ * Update user password
+ * @param {string} id - User ID
+ * @param {string} newPassword - Plain password
+ * @returns {Promise}
+ */
+async function changePassword(id, oldPassword, newPassword, confirmNewPassword) {
+  // Your changePassword function implementation
+}
+
+/**
+ * Update user password
+ * @param {string} id - User ID
+ * @param {string} newPassword - Plain password
+ * @returns {Promise}
+ */
+async function updatePassword(id, newPassword) {
+  // Your updatePassword function implementation
+}
+
+/**
+ * Check if a password matches the hashed password
+ * @param {string} data - Plain password
+ * @param {string} hash - Hashed password
+ * @returns {Promise<boolean>}
+ */
+async function passwordMatched(data, hash) {
+  try {
+    // Compare the provided data with the stored hash
+    const isMatched = await bcrypt.compare(data, hash);
+
+    if (!isMatched) {
+      throw errorResponder(
+        errorTypes.INVALID_PASSWORD,
+        'Invalid password'
+      );
+    }
+
+    return true;
+  } catch (error) {
+    throw error;
+  }
 }
 
 module.exports = {
@@ -115,4 +127,7 @@ module.exports = {
   updateUser,
   deleteUser,
   isEmailExists,
+  changePassword,
+  updatePassword,
+  passwordMatched, // Add passwordMatched to exports
 };
